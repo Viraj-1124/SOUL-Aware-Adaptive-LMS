@@ -1,23 +1,16 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from ..database import SessionLocal
+from ..database import SessionLocal,get_db
 from .. import models, schemas
-from passlib.context import CryptContext
+from app.auth.securities import hash_password, verify_password
+from app.auth.jwt import create_access_token
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.post("/register", response_model=schemas.UserOut)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    hashed_password = pwd_context.hash(user.password)
+    hashed_password = hash_password(user.password)
     new_user = models.User(
         email=user.email,
         password=hashed_password
