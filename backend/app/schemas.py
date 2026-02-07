@@ -67,7 +67,6 @@ class QuizQuestionOut(BaseModel):
 
 
 class QuizSubmission(BaseModel):
-    user_id: int
     topic_id: int
     answers: dict  
     time_spent: float
@@ -101,3 +100,12 @@ class ActivityOut(BaseModel):
 
     class Config:
         from_attribute = True
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"

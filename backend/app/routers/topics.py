@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..database import SessionLocal, get_db
+from app.auth.dependencies import admin_only,get_current_user
 from .. import models, schemas
 
 router = APIRouter(prefix="/topics", tags=["Topics"])
 
 
-@router.post("/", response_model=schemas.TopicOut)
+@router.post("/", response_model=schemas.TopicOut,dependencies=[Depends(admin_only)])
 def create_topic(topic: schemas.TopicCreate, db: Session = Depends(get_db)):
     course = db.query(models.Course).filter(models.Course.id == topic.course_id).first()
     if not course:

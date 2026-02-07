@@ -1,6 +1,7 @@
 from fastapi import FastAPI
-from .database import engine
+from .database import engine, SessionLocal
 from . import models
+from .auth.securities import hash_password
 from .routers import users, courses, topics, quizzes, activity
 
 app = FastAPI(title="Soul LMS Backend")
@@ -16,3 +17,17 @@ app.include_router(activity.router)
 @app.get("/")
 def root():
     return {"message": "Soul LMS Backend Running"}
+
+@app.on_event("startup")
+def create_admin():
+    db = SessionLocal()
+    admin = db.query(models.User).filter(models.User.role == "ADMIN").first()
+    if not admin:
+        admin = models.User(
+            email ="admin@lms.com",
+            password = hash_password("admin123"),
+            role="ADMIN"
+        )
+        db.add(admin)
+        db.commit()
+    db.close()

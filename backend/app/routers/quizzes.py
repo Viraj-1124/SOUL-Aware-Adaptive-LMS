@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..database import SessionLocal,get_db
+from app.auth.dependencies import admin_only,get_current_user
 from .. import models, schemas
 
 router = APIRouter(prefix="/quiz", tags=["Quiz"])
 
-@router.post("/question", response_model=schemas.QuizQuestionOut)
+@router.post("/question", response_model=schemas.QuizQuestionOut,dependencies=[Depends(admin_only)])
 def add_question(question: schemas.QuizQuestionCreate, db: Session = Depends(get_db)):
     new_question = models.QuizQuestion(**question.dict())
     db.add(new_question)
@@ -22,7 +23,11 @@ def get_questions(topic_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/submit", response_model=schemas.QuizAttemptOut)
-def submit_quiz(submission: schemas.QuizSubmission, db: Session = Depends(get_db)):
+def submit_quiz(
+    submission: schemas.QuizSubmission,
+    db: Session = Depends(get_db), 
+    user = Depends(get_current_user)
+):
     questions = db.query(models.QuizQuestion).filter(
         models.QuizQuestion.topic_id == submission.topic_id
     ).all()
@@ -37,7 +42,7 @@ def submit_quiz(submission: schemas.QuizSubmission, db: Session = Depends(get_db
                 score += 1
 
     attempt = models.QuizAttempt(
-        user_id=submission.user_id,
+        user_id=user.id,
         topic_id=submission.topic_id,
         score=score,
         total_questions=len(questions),
