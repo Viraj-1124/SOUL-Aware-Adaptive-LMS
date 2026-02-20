@@ -28,3 +28,11 @@ def admin_only(current_user: User = Depends(get_current_user)):
     if current_user.role != "ADMIN":
         raise HTTPException(status_code=403, detail="ADMIN access required")
     return current_user
+
+
+def require_role(allowed_roles: list):
+    def role_checker(current_user: User = Depends(get_current_user)):
+        if current_user.role not in allowed_roles:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        return current_user
+    return role_checker

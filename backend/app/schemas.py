@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import List
+from datetime import date,datetime
 
 class UserCreate(BaseModel):
     email: str
@@ -109,3 +110,57 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class AttendanceCreate(BaseModel):
+    student_id: int
+    course_id: int
+    date: date
+    present: bool
+
+
+class AttendanceResponse(BaseModel):
+    id: int
+    student_id: int
+    course_id: int
+    date: date
+    present: bool
+
+    class Config:
+        from_attributes = True
+
+
+class AssignmentCreate(BaseModel):
+    course_id: int
+    title: str
+    description: str
+    due_date: datetime
+
+
+class AssignmentResponse(BaseModel):
+    id: int
+    course_id: int
+    title: str
+    description: str
+    due_date: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class SubmissionCreate(BaseModel):
+    assignment_id: int
+    submission_text: str
+    reflection_text: str
+
+
+class SubmissionResponse(BaseModel):
+    id: int
+    assignment_id: int
+    student_id: int
+    score: float | None
+    sentiment_score: float | None
+    reflection_depth: float | None
+
+    class Config:
+        from_attributes = True

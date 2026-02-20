@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from .database import engine, SessionLocal
 from . import models
 from .auth.securities import hash_password
-from .routers import users, courses, topics, quizzes, activity
+from .routers import attendance, users, courses, topics, quizzes, activity, assignments
 
 app = FastAPI(title="Soul LMS Backend")
 
@@ -13,6 +13,8 @@ app.include_router(courses.router)
 app.include_router(topics.router)
 app.include_router(quizzes.router)
 app.include_router(activity.router)
+app.include_router(attendance.router)
+app.include_router(assignment.router)
 
 @app.get("/")
 def root():

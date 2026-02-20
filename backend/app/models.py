@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Float, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, DateTime, Boolean, UniqueConstraint, Date, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from .database import Base
@@ -65,3 +65,60 @@ class ActivityLog(Base):
     event_type = Column(String)
     time_spent = Column(Float)  # seconds
     timestamp = Column(DateTime, default=datetime.utcnow)
+
+
+class Attendance(Base):
+    __tablename__ = "attendance"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    student_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
+
+    date = Column(Date, nullable=False)
+    present = Column(Boolean, default=False)
+
+    student = relationship("User")
+    course = relationship("Course")
+
+    __table_args__ = (
+        UniqueConstraint("student_id", "course_id", "date", name="unique_attendance"),
+    )
+
+
+class Assignment(Base):
+    __tablename__ = "assignments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
+
+    title = Column(String(255), nullable=False)
+    description = Column(Text)
+    due_date = Column(DateTime, nullable=False)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    course = relationship("Course")
+
+
+
+class AssignmentSubmission(Base):
+    __tablename__ = "assignment_submissions"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    assignment_id = Column(Integer, ForeignKey("assignments.id"), nullable=False)
+    student_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+    submission_text = Column(Text, nullable=False)
+    reflection_text = Column(Text, nullable=True)
+
+    score = Column(Float, nullable=True)
+
+    sentiment_score = Column(Float, nullable=True)
+    reflection_depth = Column(Float, nullable=True)
+
+    submitted_at = Column(DateTime, default=datetime.utcnow)
+
+    assignment = relationship("Assignment")
+    student = relationship("User")
