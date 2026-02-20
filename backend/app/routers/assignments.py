@@ -14,7 +14,7 @@ router = APIRouter(prefix="/assignments", tags=["Assignments"])
 def create_assignment(
     data: AssignmentCreate,
     db: Session = Depends(get_db),
-    current_user = Depends(require_role(["ADMIN", "instructor"]))
+    current_user = Depends(require_role(["ADMIN", "INSTRUCTOR"]))
 ):
     assignment = Assignment(**data.dict())
     db.add(assignment)

@@ -14,7 +14,7 @@ router = APIRouter(prefix="/attendance", tags=["Attendance"])
 def mark(
     data: AttendanceCreate,
     db: Session = Depends(get_db),
-    current_user = Depends(require_role(["ADMIN", "instructor"]))
+    current_user = Depends(require_role(["ADMIN", "INSTRUCTOR"]))
 ):
     return mark_attendance(db, data)
 

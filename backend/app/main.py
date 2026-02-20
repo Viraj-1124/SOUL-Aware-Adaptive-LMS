@@ -1,12 +1,12 @@
 from fastapi import FastAPI
-from .database import engine, SessionLocal
+from .database import engine, SessionLocal, Base
 from . import models
 from .auth.securities import hash_password
 from .routers import attendance, users, courses, topics, quizzes, activity, assignments
 
 app = FastAPI(title="Soul LMS Backend")
 
-models.Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 app.include_router(users.router)
 app.include_router(courses.router)
@@ -14,7 +14,7 @@ app.include_router(topics.router)
 app.include_router(quizzes.router)
 app.include_router(activity.router)
 app.include_router(attendance.router)
-app.include_router(assignment.router)
+app.include_router(assignments.router)
 
 @app.get("/")
 def root():
@@ -31,5 +31,35 @@ def create_admin():
             role="ADMIN"
         )
         db.add(admin)
+        db.commit()
+    db.close()
+
+
+@app.on_event("startup")
+def create_instructor():
+    db = SessionLocal()
+    admin = db.query(models.User).filter(models.User.role == "INSTRUCTOR").first()
+    if not admin:
+        instructor = models.User(
+            email ="inst@lms.com",
+            password = hash_password("inst123"),
+            role="INSTRUCTOR"
+        )
+        db.add(instructor)
+        db.commit()
+    db.close()
+
+
+@app.on_event("startup")
+def create_student():
+    db = SessionLocal()
+    admin = db.query(models.User).filter(models.User.role == "STUDENT").first()
+    if not admin:
+        student = models.User(
+            email ="stud@lms.com",
+            password = hash_password("stud123"),
+            role="STUDENT"
+        )
+        db.add(student)
         db.commit()
     db.close()
