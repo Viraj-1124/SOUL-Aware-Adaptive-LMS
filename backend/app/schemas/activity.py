@@ -1,18 +1,8 @@
 from pydantic import BaseModel
+from typing import Optional, Dict
 
 class ActivityCreate(BaseModel):
-    user_id: int
-    topic_id: int
-    event_type: str
-    time_spent: float
-
-
-class ActivityOut(BaseModel):
-    id: int
-    user_id: int
-    topic_id: int
-    event_type: str
-    time_spent: float
-
-    class Config:
-        from_attribute = True
+    course_id: Optional[int]
+    activity_type: str
+    duration_seconds: Optional[float] = 0
+    metadata: Optional[Dict] = None

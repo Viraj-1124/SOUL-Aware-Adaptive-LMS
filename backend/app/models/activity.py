@@ -1,13 +1,22 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import Column, Integer, ForeignKey, String, DateTime, Float, JSON
+from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database import Base
 
-class ActivityLog(Base):
-    __tablename__ = "activity_logs"
+class StudentActivityLog(Base):
+    __tablename__ = "student_activity_logs"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, index=True)
-    topic_id = Column(Integer, index=True)
-    event_type = Column(String)
-    time_spent = Column(Float)  # seconds
-    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    student_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=True)
+
+    activity_type = Column(String(50), nullable=False)
+    activity_timestamp = Column(DateTime, default=datetime.utcnow)
+
+    duration_seconds = Column(Float, nullable=True)
+
+    activity_metadata = Column(String)
+
+    student = relationship("User")
+    course = relationship("Course")
