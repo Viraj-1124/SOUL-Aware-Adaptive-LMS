@@ -8,6 +8,7 @@ from collections import defaultdict
 from app.models.activity import StudentActivityLog
 from app.models.assignment import AssignmentSubmission
 from app.models.attendance import Attendance
+from app.models.reflection_analysis import ReflectionAnalysis
 
 
 # =========================================================
@@ -234,3 +235,20 @@ def build_feature_vector(db: Session, student_id: int, course_id: int):
         performance_trend,
         attendance_trend
     ]
+
+def compute_emotional_volatility(db, student_id):
+
+    reflections = db.query(ReflectionAnalysis.sentiment_polarity)\
+        .join(AssignmentSubmission)\
+        .filter(AssignmentSubmission.student_id == student_id)\
+        .order_by(ReflectionAnalysis.created_at)\
+        .all()
+
+    sentiments = [r[0] for r in reflections]
+
+    if len(sentiments) < 2:
+        return 0
+
+    changes = [abs(sentiments[i] - sentiments[i-1]) for i in range(1, len(sentiments))]
+
+    return sum(changes) / len(changes)

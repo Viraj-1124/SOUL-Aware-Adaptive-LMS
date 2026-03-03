@@ -3,6 +3,8 @@ from app.models import AssignmentSubmission
 from app.services.reflection_service import analyze_reflection
 from fastapi import HTTPException
 from datetime import datetime
+from app.ai_engine.reflection_analyzer import analyze_reflection_advanced
+from app.models.reflection_analysis import ReflectionAnalysis
 from app.models import Assignment
 
 
@@ -22,6 +24,7 @@ def submit_assignment(db: Session, student_id: int, data):
         )
 
     sentiment, depth = analyze_reflection(data.reflection_text)
+    analysis = analyze_reflection_advanced(data.reflection_text)
 
     submission = AssignmentSubmission(
         assignment_id=data.assignment_id,
@@ -35,5 +38,18 @@ def submit_assignment(db: Session, student_id: int, data):
     db.add(submission)
     db.commit()
     db.refresh(submission)
+
+    if analysis:
+        reflection_record = ReflectionAnalysis(
+            submission_id=submission.id,
+            sentiment_polarity=analysis["sentiment_polarity"],
+            sentiment_intensity=analysis["sentiment_intensity"],
+            lexical_diversity=analysis["lexical_diversity"],
+            self_reference_ratio=analysis["self_reference_ratio"],
+            cognitive_complexity=analysis["cognitive_complexity"],
+            reflection_depth_score=analysis["reflection_depth_score"]
+        )
+    db.add(reflection_record)
+    db.commit()
 
     return submission
