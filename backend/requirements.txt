@@ -8,5 +8,4 @@ bcrypt==3.2.2
 python-multipart
 textblob 
 textstat
-pip install textblob textstat nltk
-python -m textblob.download_corpora
+nltk

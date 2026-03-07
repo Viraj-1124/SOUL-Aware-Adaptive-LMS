@@ -1,3 +1,4 @@
+#python -m textblob.download_corpora
 import re
 import textstat
 from textblob import TextBlob

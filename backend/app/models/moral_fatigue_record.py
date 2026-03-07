@@ -6,6 +6,7 @@ class MoralFatigueRecord(Base):
     __tablename__ = "moral_fatigue_records"
 
     id = Column(Integer, primary_key=True)
+
     student_id = Column(Integer, ForeignKey("users.id"))
     course_id = Column(Integer, ForeignKey("courses.id"))
 

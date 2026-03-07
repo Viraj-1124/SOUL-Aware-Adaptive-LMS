@@ -8,6 +8,7 @@ from collections import defaultdict
 from app.models.activity import StudentActivityLog
 from app.models.assignment import AssignmentSubmission
 from app.models.attendance import Attendance
+from app.models.quiz import QuizAttempt
 from app.models.reflection_analysis import ReflectionAnalysis
 
 
@@ -26,16 +27,19 @@ def minmax_scale(value: float, min_val: float, max_val: float):
 # 1️⃣ Academic Mastery
 # =========================================================
 
-def compute_academic_mastery(db: Session, student_id: int):
+def compute_academic_mastery(db, student_id):
 
-    avg_score = db.query(func.avg(AssignmentSubmission.score)).filter(
+    avg_assignment = db.query(func.avg(AssignmentSubmission.score)).filter(
         AssignmentSubmission.student_id == student_id
-    ).scalar()
+    ).scalar() or 0
 
-    avg_score = avg_score or 0
+    avg_quiz = db.query(func.avg(QuizAttempt.score)).filter(
+        QuizAttempt.student_id == student_id
+    ).scalar() or 0
 
-    # assuming max score 100
-    return minmax_scale(avg_score, 0, 100)
+    mastery = (avg_assignment + avg_quiz) / 2
+
+    return mastery / 100
 
 
 # =========================================================
@@ -43,9 +47,9 @@ def compute_academic_mastery(db: Session, student_id: int):
 # engagement = 0.7 * total_clicks + 0.3 * login_frequency
 # =========================================================
 
-def compute_engagement_score(db: Session, student_id: int):
+def compute_engagement_score(db, student_id):
 
-    total_clicks = db.query(func.sum(StudentActivityLog.duration_seconds)).filter(
+    clicks = db.query(func.count(StudentActivityLog.id)).filter(
         StudentActivityLog.student_id == student_id
     ).scalar() or 0
 
@@ -54,38 +58,51 @@ def compute_engagement_score(db: Session, student_id: int):
         StudentActivityLog.activity_type == "login"
     ).scalar() or 0
 
-    # normalize roughly
-    clicks_scaled = minmax_scale(total_clicks, 0, 10000)
-    login_scaled = minmax_scale(login_freq, 0, 100)
+    engagement = (0.7 * clicks) + (0.3 * login_freq)
 
-    engagement = 0.7 * clicks_scaled + 0.3 * login_scaled
+    return minmax_scale(engagement, 0, 200)
 
-    return round(engagement, 4)
 
+def compute_assignment_score(db, student_id):
+
+    avg_score = db.query(func.avg(AssignmentSubmission.score)).filter(
+        AssignmentSubmission.student_id == student_id
+    ).scalar()
+
+    if avg_score is None:
+        return 0
+
+    return avg_score / 100
+
+
+def compute_attempt_count(db, student_id):
+
+    attempts = db.query(func.count(AssignmentSubmission.id)).filter(
+        AssignmentSubmission.student_id == student_id
+    ).scalar()
+
+    return attempts or 0
 
 # =========================================================
 # 3️⃣ Attendance Rate
 # =========================================================
+def compute_attendance_rate(db, student_id, course_id):
 
-def compute_attendance_rate(db: Session, student_id: int, course_id: int):
-
-    total_days = db.query(func.count(Attendance.id)).filter(
+    total = db.query(func.count(Attendance.id)).filter(
         Attendance.student_id == student_id,
         Attendance.course_id == course_id
     ).scalar() or 0
 
-    present_days = db.query(func.count(Attendance.id)).filter(
+    present = db.query(func.count(Attendance.id)).filter(
         Attendance.student_id == student_id,
         Attendance.course_id == course_id,
         Attendance.present == True
     ).scalar() or 0
 
-    if total_days == 0:
+    if total == 0:
         return 0
 
-    rate = present_days / total_days
-
-    return round(rate, 4)
+    return present / total
 
 
 # =========================================================
@@ -101,7 +118,7 @@ def get_week_number(dt):
 # trend = (last - first) / count
 # =========================================================
 
-def compute_engagement_trend(db: Session, student_id: int):
+def compute_engagement_trend(db, student_id):
 
     logs = db.query(
         StudentActivityLog.activity_timestamp,
@@ -110,35 +127,27 @@ def compute_engagement_trend(db: Session, student_id: int):
         StudentActivityLog.student_id == student_id
     ).all()
 
-    if not logs:
-        return 0
-
-    weekly_data = defaultdict(float)
+    weekly = defaultdict(float)
 
     for log in logs:
-        week = get_week_number(log.activity_timestamp)
-        weekly_data[week] += log.duration_seconds or 0
+        week = log.activity_timestamp.isocalendar()[1]
+        weekly[week] += log.duration_seconds or 0
 
-    weeks = sorted(weekly_data.keys())
+    weeks = sorted(weekly.keys())
 
     if len(weeks) < 2:
         return 0
 
-    first = weekly_data[weeks[0]]
-    last = weekly_data[weeks[-1]]
-    count = len(weeks)
+    first = weekly[weeks[0]]
+    last = weekly[weeks[-1]]
 
-    trend = (last - first) / count
-
-    # normalize to small range
-    return round(minmax_scale(trend, -1000, 1000), 4)
-
+    return (last - first) / len(weeks)
 
 # =========================================================
 # 5️⃣ Performance Trend
 # =========================================================
 
-def compute_performance_trend(db: Session, student_id: int):
+def compute_performance_trend(db, student_id):
 
     submissions = db.query(
         AssignmentSubmission.submitted_at,
@@ -147,19 +156,16 @@ def compute_performance_trend(db: Session, student_id: int):
         AssignmentSubmission.student_id == student_id
     ).all()
 
-    if not submissions:
-        return 0
-
-    weekly_scores = defaultdict(list)
+    weekly = defaultdict(list)
 
     for sub in submissions:
-        week = get_week_number(sub.submitted_at)
-        weekly_scores[week].append(sub.score or 0)
+        week = sub.submitted_at.isocalendar()[1]
+        weekly[week].append(sub.score)
 
-    weekly_avg = {}
-
-    for week, scores in weekly_scores.items():
-        weekly_avg[week] = sum(scores) / len(scores)
+    weekly_avg = {
+        week: sum(scores) / len(scores)
+        for week, scores in weekly.items()
+    }
 
     weeks = sorted(weekly_avg.keys())
 
@@ -168,18 +174,14 @@ def compute_performance_trend(db: Session, student_id: int):
 
     first = weekly_avg[weeks[0]]
     last = weekly_avg[weeks[-1]]
-    count = len(weeks)
 
-    trend = (last - first) / count
-
-    return round(minmax_scale(trend, -50, 50), 4)
-
+    return (last - first) / len(weeks)
 
 # =========================================================
 # 6️⃣ Attendance Trend
 # =========================================================
 
-def compute_attendance_trend(db: Session, student_id: int, course_id: int):
+def compute_attendance_trend(db, student_id, course_id):
 
     records = db.query(
         Attendance.date,
@@ -189,46 +191,45 @@ def compute_attendance_trend(db: Session, student_id: int, course_id: int):
         Attendance.course_id == course_id
     ).all()
 
-    if not records:
-        return 0
-
-    weekly_presence = defaultdict(int)
+    weekly = defaultdict(int)
 
     for rec in records:
-        week = get_week_number(rec.date)
+        week = rec.date.isocalendar()[1]
         if rec.present:
-            weekly_presence[week] += 1
+            weekly[week] += 1
 
-    weeks = sorted(weekly_presence.keys())
+    weeks = sorted(weekly.keys())
 
     if len(weeks) < 2:
         return 0
 
-    first = weekly_presence[weeks[0]]
-    last = weekly_presence[weeks[-1]]
-    count = len(weeks)
+    first = weekly[weeks[0]]
+    last = weekly[weeks[-1]]
 
-    trend = (last - first) / count
+    return (last - first) / len(weeks)
 
-    return round(minmax_scale(trend, -10, 10), 4)
-
-
-# =========================================================
-# FINAL FEATURE VECTOR (ORDER MATTERS!)
-# =========================================================
-
-def build_feature_vector(db: Session, student_id: int, course_id: int):
+def build_feature_vector(db, student_id, course_id):
 
     academic_mastery = compute_academic_mastery(db, student_id)
+
+    assignment_score = compute_assignment_score(db, student_id)
+
+    attempt_count = compute_attempt_count(db, student_id)
+
     engagement_score = compute_engagement_score(db, student_id)
+
     attendance_rate = compute_attendance_rate(db, student_id, course_id)
 
     engagement_trend = compute_engagement_trend(db, student_id)
+
     performance_trend = compute_performance_trend(db, student_id)
+
     attendance_trend = compute_attendance_trend(db, student_id, course_id)
 
     return [
         academic_mastery,
+        assignment_score,
+        attempt_count,
         engagement_score,
         attendance_rate,
         engagement_trend,
