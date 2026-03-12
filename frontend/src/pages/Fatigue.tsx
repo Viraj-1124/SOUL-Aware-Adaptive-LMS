@@ -110,9 +110,7 @@ const Fatigue = () => {
               </ul>
             </div>
             
-            <div className="mt-8 pt-4 border-t border-dark-border text-sm text-gray-400 leading-relaxed">
-              <span className="font-semibold text-gray-300">Interpretation:</span> Our AI tracks interaction speed, session length variations, and outcome decay to evaluate cognitive overload and temporal fatigue.
-            </div>
+            
           </div>
 
         </div>
