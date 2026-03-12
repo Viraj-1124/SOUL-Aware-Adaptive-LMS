@@ -34,7 +34,7 @@ def compute_academic_mastery(db, student_id):
     ).scalar() or 0
 
     avg_quiz = db.query(func.avg(QuizAttempt.score)).filter(
-        QuizAttempt.student_id == student_id
+        QuizAttempt.user_id == student_id
     ).scalar() or 0
 
     mastery = (avg_assignment + avg_quiz) / 2
@@ -130,7 +130,8 @@ def compute_engagement_trend(db, student_id):
     weekly = defaultdict(float)
 
     for log in logs:
-        week = log.activity_timestamp.isocalendar()[1]
+        timestamp = log.activity_timestamp or datetime.utcnow()
+        week = timestamp.isocalendar()[1]
         weekly[week] += log.duration_seconds or 0
 
     weeks = sorted(weekly.keys())
@@ -141,8 +142,10 @@ def compute_engagement_trend(db, student_id):
     first = weekly[weeks[0]]
     last = weekly[weeks[-1]]
 
-    return (last - first) / len(weeks)
+    if first == 0:
+        return 0
 
+    return (last - first) / first
 # =========================================================
 # 5️⃣ Performance Trend
 # =========================================================
@@ -175,8 +178,10 @@ def compute_performance_trend(db, student_id):
     first = weekly_avg[weeks[0]]
     last = weekly_avg[weeks[-1]]
 
-    return (last - first) / len(weeks)
+    if first == 0:
+        return 0
 
+    return (last - first) / first
 # =========================================================
 # 6️⃣ Attendance Trend
 # =========================================================
@@ -206,7 +211,10 @@ def compute_attendance_trend(db, student_id, course_id):
     first = weekly[weeks[0]]
     last = weekly[weeks[-1]]
 
-    return (last - first) / len(weeks)
+    if first == 0:
+        return 0
+
+    return (last - first) / first
 
 def build_feature_vector(db, student_id, course_id):
 

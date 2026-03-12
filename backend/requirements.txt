@@ -9,3 +9,4 @@ python-multipart
 textblob 
 textstat
 nltk
+scikit-learn

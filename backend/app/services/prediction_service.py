@@ -1,7 +1,12 @@
 import joblib
+import os
 from app.services.feature_engineering import build_feature_vector
 
-model = joblib.load("ml/burnout_model.pkl")
+
+
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "ml", "burnout_model.pkl")
+model = joblib.load(MODEL_PATH)
 
 
 def predict_student(db, student_id, course_id):
