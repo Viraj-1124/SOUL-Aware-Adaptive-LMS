@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..database import SessionLocal,get_db
-from app.auth.dependencies import admin_only,get_current_user
+from app.auth.dependencies import admin_only, get_current_user, require_role
 from .. import models, schemas
 
 router = APIRouter(prefix="/quiz", tags=["Quiz"])
 
-@router.post("/question", response_model=schemas.QuizQuestionOut,dependencies=[Depends(admin_only)])
+@router.post("/question", response_model=schemas.QuizQuestionOut, dependencies=[Depends(require_role(["ADMIN", "INSTRUCTOR"]))])
 def add_question(question: schemas.QuizQuestionCreate, db: Session = Depends(get_db)):
     new_question = models.QuizQuestion(**question.dict())
     db.add(new_question)
