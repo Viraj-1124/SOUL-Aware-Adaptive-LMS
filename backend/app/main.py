@@ -4,7 +4,17 @@ from . import models
 from .auth.securities import hash_password
 from .routers import attendance, users, courses, topics, quizzes, activity, assignments,learning_health,debug,fatigue,predictions
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(title="Soul LMS Backend")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 Base.metadata.create_all(bind=engine)
 
@@ -16,7 +26,6 @@ app.include_router(activity.router)
 app.include_router(attendance.router)
 app.include_router(assignments.router)
 app.include_router(learning_health.router)
-app.include_router(debug.router)
 app.include_router(fatigue.router)
 app.include_router(predictions.router)
 
