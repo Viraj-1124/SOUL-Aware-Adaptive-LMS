@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from .database import engine, SessionLocal, Base
 from . import models
 from .auth.securities import hash_password
-from .routers import attendance, users, courses, topics, quizzes, activity, assignments,learning_health,debug,fatigue,predictions
+from .routers import attendance, users, courses, topics, quizzes, activity, assignments,learning_health,debug,fatigue,predictions,knowledge
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -28,6 +28,7 @@ app.include_router(assignments.router)
 app.include_router(learning_health.router)
 app.include_router(fatigue.router)
 app.include_router(predictions.router)
+app.include_router(knowledge.router)
 
 @app.get("/")
 def root():

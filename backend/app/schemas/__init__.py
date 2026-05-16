@@ -5,6 +5,7 @@ from .activity import ActivityCreate
 from .auth import LoginRequest, TokenResponse
 from .attendance import AttendanceCreate, AttendanceResponse
 from .assignment import AssignmentCreate, AssignmentResponse, SubmissionCreate, SubmissionResponse
+from .knowledge_tracing import StudentKnowledgeStateOut, KnowledgePredictionOut, KnowledgeRecommendationOut
 
 __all__ = [
     "UserCreate", "UserOut",
@@ -13,5 +14,6 @@ __all__ = [
     "ActivityCreate", 
     "LoginRequest", "TokenResponse",
     "AttendanceCreate", "AttendanceResponse",
-    "AssignmentCreate", "AssignmentResponse", "SubmissionCreate", "SubmissionResponse"
+    "AssignmentCreate", "AssignmentResponse", "SubmissionCreate", "SubmissionResponse",
+    "StudentKnowledgeStateOut", "KnowledgePredictionOut", "KnowledgeRecommendationOut"
 ]

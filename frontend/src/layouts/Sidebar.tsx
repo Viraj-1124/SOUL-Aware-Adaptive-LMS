@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { 
   Home, BookOpen, FileText, CheckSquare, 
   Calendar, Activity, BrainCircuit,
-  Users, Settings, LogOut
+  Users, Settings, LogOut, Target
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -21,6 +21,7 @@ const Sidebar = () => {
         { name: 'Assignments', path: `${baseUrl}/assignments`, icon: FileText },
         { name: 'Quizzes', path: `${baseUrl}/quizzes`, icon: CheckSquare },
         { name: 'Attendance', path: `${baseUrl}/attendance`, icon: Calendar },
+        { name: 'Knowledge Tracing', path: `${baseUrl}/knowledge`, icon: Target },
       ];
     } else if (role === 'INSTRUCTOR') {
       return [
@@ -32,6 +33,7 @@ const Sidebar = () => {
         { name: 'Attendance', path: `${baseUrl}/attendance`, icon: Calendar },
         { name: 'Predictions', path: `${baseUrl}/predictions`, icon: Activity },
         { name: 'Fatigue Monitor', path: `${baseUrl}/fatigue`, icon: BrainCircuit },
+        { name: 'Knowledge Tracing', path: `${baseUrl}/knowledge`, icon: Target },
       ];
     } else if (role === 'ADMIN') {
       return [
@@ -42,6 +44,7 @@ const Sidebar = () => {
         { name: 'Quiz Mgmt', path: `${baseUrl}/quiz`, icon: CheckSquare },
         { name: 'Predictions', path: `${baseUrl}/predictions`, icon: Activity },
         { name: 'System Monitor', path: `${baseUrl}/system`, icon: Settings },
+        { name: 'Knowledge Tracing', path: `${baseUrl}/knowledge`, icon: Target },
       ];
     }
     return [];
