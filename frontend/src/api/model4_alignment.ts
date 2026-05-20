@@ -75,6 +75,25 @@ export interface MasteryPrefillOut {
   has_data: boolean;
 }
 
+export interface ContextPrefillOut {
+  html_mastery: number;
+  css_mastery: number;
+  js_mastery: number;
+  react_mastery: number;
+  python_mastery: number;
+  ml_mastery: number;
+  dsa_mastery: number;
+  environment: string;
+  engagement_score: number;
+  consistency_score: number;
+  integrity_score: number;
+  anomaly_score: number;
+  goal_text: string;
+  has_activity_data: boolean;
+  has_mastery_data: boolean;
+  has_saved_goal: boolean;
+}
+
 export const alignmentApi = {
   analyzeGoal: async (studentId: number, data: GoalAlignmentRequest): Promise<GoalAlignmentResponse> => {
     const response = await apiClient.post(`/alignment/analyze/${studentId}`, data);
@@ -83,6 +102,11 @@ export const alignmentApi = {
 
   getProfile: async (studentId: number): Promise<GoalProfileOut> => {
     const response = await apiClient.get(`/alignment/profile/${studentId}`);
+    return response.data;
+  },
+
+  getContextPrefill: async (studentId: number): Promise<ContextPrefillOut> => {
+    const response = await apiClient.get(`/alignment/context-prefill/${studentId}`);
     return response.data;
   },
 

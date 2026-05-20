@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { alignmentApi } from '../api/model4_alignment';
-import type { GoalAlignmentRequest, GoalAlignmentResponse, MasteryPrefillOut } from '../api/model4_alignment';
+import type { GoalAlignmentRequest, GoalAlignmentResponse, ContextPrefillOut } from '../api/model4_alignment';
 import {
   Target, BrainCircuit, AlertTriangle, CheckCircle,
   BookOpen, User as UserIcon, Compass, Layers, ChevronDown, ChevronUp,
-  Zap, RotateCcw, History
+  RotateCcw, RefreshCw, Info
 } from 'lucide-react';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip } from 'recharts';
 
@@ -44,8 +44,11 @@ const defaultForm: GoalAlignmentRequest = {
 };
 
 const SliderField = ({
-  label, name, value, onChange
-}: { label: string; name: string; value: number; onChange: (name: string, val: number) => void }) => (
+  label, name, value, onChange, readOnly = false
+}: {
+  label: string; name: string; value: number;
+  onChange: (name: string, val: number) => void; readOnly?: boolean;
+}) => (
   <div>
     <div className="flex justify-between text-sm mb-1">
       <span className="text-gray-300">{label}</span>
@@ -55,7 +58,8 @@ const SliderField = ({
       type="range" min={0} max={1} step={0.05}
       value={value}
       onChange={e => onChange(name, parseFloat(e.target.value))}
-      className="w-full accent-primary-500"
+      disabled={readOnly}
+      className={`w-full accent-primary-500 ${readOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
     />
   </div>
 );
@@ -66,10 +70,9 @@ const GoalAlignment = () => {
   const [studentId, setStudentId] = useState('');
   const [result, setResult] = useState<GoalAlignmentResponse | null>(null);
   const [loading, setLoading] = useState(false);
-  const [prefilling, setPrefilling] = useState(false);
-  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [autoLoading, setAutoLoading] = useState(false);
   const [error, setError] = useState('');
-  const [prefillInfo, setPrefillInfo] = useState<MasteryPrefillOut | null>(null);
+  const [prefillMeta, setPrefillMeta] = useState<ContextPrefillOut | null>(null);
   const [showDomainScores, setShowDomainScores] = useState(false);
 
   const targetStudentId = user?.role === 'STUDENT' ? user.id : Number(studentId);
@@ -78,101 +81,62 @@ const GoalAlignment = () => {
     setForm(prev => ({ ...prev, [name]: val }));
   };
 
-  // Auto-fill skill mastery from knowledge tracing
-  const handlePrefill = async () => {
-    if (!targetStudentId) { setError('Please enter a Student ID first.'); return; }
-    setPrefilling(true);
+  // Auto-fetch everything from DB for a student
+  const autoFetchAll = useCallback(async (sid: number) => {
+    if (!sid) return;
+    setAutoLoading(true);
     setError('');
     try {
-      const data = await alignmentApi.getMasteryPrefill(targetStudentId);
-      if (!data.has_data) {
-        setError('No knowledge tracing data found yet. Complete some quizzes first, or set skills manually.');
-        return;
-      }
+      const data = await alignmentApi.getContextPrefill(sid);
+      setPrefillMeta(data);
       setForm(prev => ({
         ...prev,
-        html_mastery:   data.html_mastery,
-        css_mastery:    data.css_mastery,
-        js_mastery:     data.js_mastery,
-        react_mastery:  data.react_mastery,
-        python_mastery: data.python_mastery,
-        ml_mastery:     data.ml_mastery,
-        dsa_mastery:    data.dsa_mastery,
+        // Skill mastery from knowledge tracing
+        html_mastery:      data.html_mastery,
+        css_mastery:       data.css_mastery,
+        js_mastery:        data.js_mastery,
+        react_mastery:     data.react_mastery,
+        python_mastery:    data.python_mastery,
+        ml_mastery:        data.ml_mastery,
+        dsa_mastery:       data.dsa_mastery,
+        // Learning context from activity/reflection DB
+        environment:       data.environment,
+        engagement_score:  data.engagement_score,
+        consistency_score: data.consistency_score,
+        integrity_score:   data.integrity_score,
+        anomaly_score:     data.anomaly_score,
+        // Goal text from saved profile (keep existing if no saved goal)
+        goal_text: data.has_saved_goal ? data.goal_text : prev.goal_text,
       }));
-      setPrefillInfo(data);
     } catch {
-      setError('Could not load knowledge tracing data.');
+      // Silently fail — student may have no data yet, defaults remain
     } finally {
-      setPrefilling(false);
+      setAutoLoading(false);
     }
-  };
+  }, []);
 
-  // Load previously saved profile back into the form
-  const handleLoadProfile = async () => {
-    if (!targetStudentId) { setError('Please enter a Student ID first.'); return; }
-    setLoadingProfile(true);
-    setError('');
-    try {
-      const profile = await alignmentApi.getProfile(targetStudentId);
-      setForm({
-        goal_text:         profile.goal_text,
-        html_mastery:      0.5,
-        css_mastery:       0.5,
-        js_mastery:        0.5,
-        react_mastery:     0.3,
-        python_mastery:    0.4,
-        ml_mastery:        0.2,
-        dsa_mastery:       0.3,
-        environment:       'online',
-        engagement_score:  0.7,
-        consistency_score: 0.6,
-        integrity_score:   0.9,
-        anomaly_score:     0.05,
-      });
-      // Show the saved result directly
-      if (profile.alignment_score !== null) {
-        setResult({
-          student_id:               profile.student_id,
-          goal_text:                profile.goal_text,
-          goal_type:                profile.goal_type ?? '',
-          goal_specificity_score:   profile.goal_specificity_score ?? 0,
-          collaboration_score:      0,
-          alignment_score:          profile.alignment_score ?? 0,
-          predicted_domain:         profile.predicted_domain ?? '',
-          all_domain_scores:        {},
-          skill_gap:                profile.skill_gap ?? 0,
-          skill_gap_vector:         {},
-          weakest_topics:           profile.weakest_topics ?? [],
-          context_adjustment_score: 0,
-          learning_mode_hint:       profile.learning_mode_hint ?? '',
-          integrity_flag:           profile.integrity_flag ?? false,
-          scaffold_level:           profile.scaffold_level ?? '',
-          behavior_summary:         profile.behavior_summary ?? '',
-          recommendation:           profile.recommendation ?? '',
-          learning_path:            profile.learning_path ?? [],
-          resources:                profile.resources ?? [],
-          explanation:              profile.explanation ?? '',
-          confidence_score:         profile.confidence_score ?? 0,
-        });
-      }
-    } catch (err: any) {
-      if (err.response?.status === 404) {
-        setError('No saved profile found. Run an analysis first.');
-      } else {
-        setError(err.response?.data?.detail || 'Could not load saved profile.');
-      }
-    } finally {
-      setLoadingProfile(false);
+  // Students: auto-fetch on page load
+  useEffect(() => {
+    if (user?.role === 'STUDENT' && user.id) {
+      autoFetchAll(user.id);
     }
-  };
+  }, [user, autoFetchAll]);
+
+  // Instructor/Admin: auto-fetch when student ID is entered (debounced)
+  useEffect(() => {
+    if ((user?.role === 'INSTRUCTOR' || user?.role === 'ADMIN') && Number(studentId) > 0) {
+      const timer = setTimeout(() => autoFetchAll(Number(studentId)), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [studentId, user, autoFetchAll]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!targetStudentId) { setError('Please enter a Student ID.'); return; }
+    if (!form.goal_text.trim()) { setError('Please enter a learning goal.'); return; }
     setLoading(true);
     setError('');
     setResult(null);
-    setPrefillInfo(null);
     try {
       const res = await alignmentApi.analyzeGoal(targetStudentId, form);
       setResult(res);
@@ -183,7 +147,6 @@ const GoalAlignment = () => {
     }
   };
 
-  // Radar chart data from skill gap vector
   const radarData = result
     ? Object.entries(result.skill_gap_vector).map(([key, gap]) => ({
         skill: key.replace('_mastery', '').replace('_', ' ').toUpperCase(),
@@ -192,7 +155,6 @@ const GoalAlignment = () => {
       }))
     : [];
 
-  // Domain scores bar data
   const domainData = result
     ? Object.entries(result.all_domain_scores)
         .sort((a, b) => b[1] - a[1])
@@ -214,64 +176,65 @@ const GoalAlignment = () => {
 
       {/* Input Form */}
       <form onSubmit={handleSubmit} className="glass-card p-6 space-y-6">
+
         {/* Instructor/Admin: student ID input */}
         {(user?.role === 'INSTRUCTOR' || user?.role === 'ADMIN') && (
           <div>
-            <label className="block text-sm text-gray-300 mb-1">Student ID</label>
+            <label className="block text-sm text-gray-300 mb-1">
+              Student ID
+              <span className="ml-2 text-xs text-gray-500">— all fields auto-populate from student data</span>
+            </label>
             <div className="relative">
               <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="number" className="input-field pl-9" value={studentId}
-                onChange={e => setStudentId(e.target.value)} required
-                placeholder="Enter student ID"
+                onChange={e => setStudentId(e.target.value)}
+                placeholder="Enter student ID to auto-load their data"
               />
+              {autoLoading && (
+                <RefreshCw className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary-400 animate-spin" />
+              )}
             </div>
           </div>
         )}
 
-        {/* Quick action buttons */}
-        <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={handlePrefill}
-            disabled={prefilling || (!targetStudentId)}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <Zap className="h-4 w-4" />
-            {prefilling ? 'Loading...' : 'Auto-fill from Knowledge Tracing'}
-          </button>
-          <button
-            type="button"
-            onClick={handleLoadProfile}
-            disabled={loadingProfile || (!targetStudentId)}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-purple-500/10 border border-purple-500/30 text-purple-400 hover:bg-purple-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <History className="h-4 w-4" />
-            {loadingProfile ? 'Loading...' : 'Load Saved Profile'}
-          </button>
-          <button
-            type="button"
-            onClick={() => { setForm(defaultForm); setResult(null); setError(''); setPrefillInfo(null); }}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-gray-500/10 border border-gray-500/30 text-gray-400 hover:bg-gray-500/20 transition-colors"
-          >
-            <RotateCcw className="h-4 w-4" /> Reset
-          </button>
-        </div>
-
-        {/* Prefill info banner */}
-        {prefillInfo?.has_data && (
-          <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-xs text-blue-300 flex items-start gap-2">
-            <Zap className="h-4 w-4 shrink-0 mt-0.5 text-blue-400" />
-            <div>
-              <span className="font-semibold">Skills auto-filled from your quiz history.</span>
-              {' '}Adjust any values before running the analysis.
+        {/* Auto-load status banner */}
+        {prefillMeta && (
+          <div className="p-3 rounded-lg border text-xs flex items-start gap-2 bg-primary-500/5 border-primary-500/20 text-primary-300">
+            <Info className="h-4 w-4 shrink-0 mt-0.5 text-primary-400" />
+            <div className="space-y-0.5">
+              <span className="font-semibold">Data auto-loaded from student records.</span>
+              <div className="text-gray-400 flex flex-wrap gap-3 mt-1">
+                <span className={prefillMeta.has_mastery_data ? 'text-green-400' : 'text-yellow-400'}>
+                  {prefillMeta.has_mastery_data ? '✓ Skill mastery from quiz history' : '⚠ No quiz history — using defaults'}
+                </span>
+                <span className={prefillMeta.has_activity_data ? 'text-green-400' : 'text-yellow-400'}>
+                  {prefillMeta.has_activity_data ? '✓ Context from activity logs' : '⚠ No activity data — using defaults'}
+                </span>
+                <span className={prefillMeta.has_saved_goal ? 'text-green-400' : 'text-yellow-400'}>
+                  {prefillMeta.has_saved_goal ? '✓ Goal loaded from saved profile' : '⚠ No saved goal — please enter one'}
+                </span>
+              </div>
             </div>
+          </div>
+        )}
+
+        {/* Student loading indicator */}
+        {user?.role === 'STUDENT' && autoLoading && (
+          <div className="flex items-center gap-2 text-sm text-primary-400">
+            <RefreshCw className="h-4 w-4 animate-spin" />
+            Loading your data from quiz history and activity logs...
           </div>
         )}
 
         {/* Goal text */}
         <div>
-          <label className="block text-sm text-gray-300 mb-1">Your Learning Goal</label>
+          <label className="block text-sm text-gray-300 mb-1">
+            Learning Goal
+            {prefillMeta?.has_saved_goal && (
+              <span className="ml-2 text-xs text-green-400">✓ loaded from saved profile</span>
+            )}
+          </label>
           <textarea
             className="input-field resize-none h-20"
             placeholder='e.g. "I want to become a frontend developer within 6 months"'
@@ -283,25 +246,35 @@ const GoalAlignment = () => {
 
         {/* Skill mastery sliders */}
         <div>
-          <h3 className="text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wider flex items-center gap-2">
-            <Layers className="h-4 w-4 text-primary-400" /> Skill Mastery Levels
-          </h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider flex items-center gap-2">
+              <Layers className="h-4 w-4 text-primary-400" /> Skill Mastery Levels
+            </h3>
+            {prefillMeta?.has_mastery_data && (
+              <span className="text-xs text-green-400">✓ auto-filled from quiz history</span>
+            )}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <SliderField label="HTML"           name="html_mastery"    value={form.html_mastery}    onChange={handleSlider} />
-            <SliderField label="CSS"            name="css_mastery"     value={form.css_mastery}     onChange={handleSlider} />
-            <SliderField label="JavaScript"     name="js_mastery"      value={form.js_mastery}      onChange={handleSlider} />
-            <SliderField label="React"          name="react_mastery"   value={form.react_mastery}   onChange={handleSlider} />
-            <SliderField label="Python"         name="python_mastery"  value={form.python_mastery}  onChange={handleSlider} />
-            <SliderField label="Machine Learning" name="ml_mastery"    value={form.ml_mastery}      onChange={handleSlider} />
-            <SliderField label="DSA"            name="dsa_mastery"     value={form.dsa_mastery}     onChange={handleSlider} />
+            <SliderField label="HTML"             name="html_mastery"    value={form.html_mastery}    onChange={handleSlider} />
+            <SliderField label="CSS"              name="css_mastery"     value={form.css_mastery}     onChange={handleSlider} />
+            <SliderField label="JavaScript"       name="js_mastery"      value={form.js_mastery}      onChange={handleSlider} />
+            <SliderField label="React"            name="react_mastery"   value={form.react_mastery}   onChange={handleSlider} />
+            <SliderField label="Python"           name="python_mastery"  value={form.python_mastery}  onChange={handleSlider} />
+            <SliderField label="Machine Learning" name="ml_mastery"      value={form.ml_mastery}      onChange={handleSlider} />
+            <SliderField label="DSA"              name="dsa_mastery"     value={form.dsa_mastery}     onChange={handleSlider} />
           </div>
         </div>
 
         {/* Context */}
         <div>
-          <h3 className="text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wider flex items-center gap-2">
-            <BrainCircuit className="h-4 w-4 text-primary-400" /> Learning Context
-          </h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider flex items-center gap-2">
+              <BrainCircuit className="h-4 w-4 text-primary-400" /> Learning Context
+            </h3>
+            {prefillMeta?.has_activity_data && (
+              <span className="text-xs text-green-400">✓ auto-filled from activity & reflection data</span>
+            )}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-gray-300 mb-1">Environment</label>
@@ -315,16 +288,35 @@ const GoalAlignment = () => {
                 ))}
               </select>
             </div>
-            <SliderField label="Engagement Score"  name="engagement_score"  value={form.engagement_score}  onChange={handleSlider} />
-            <SliderField label="Consistency Score" name="consistency_score" value={form.consistency_score} onChange={handleSlider} />
-            <SliderField label="Integrity Score"   name="integrity_score"   value={form.integrity_score}   onChange={handleSlider} />
-            <SliderField label="Anomaly Score (lower is better)" name="anomaly_score" value={form.anomaly_score} onChange={handleSlider} />
+            <SliderField label="Engagement Score"               name="engagement_score"  value={form.engagement_score}  onChange={handleSlider} />
+            <SliderField label="Consistency Score"              name="consistency_score" value={form.consistency_score} onChange={handleSlider} />
+            <SliderField label="Integrity Score"                name="integrity_score"   value={form.integrity_score}   onChange={handleSlider} />
+            <SliderField label="Anomaly Score (lower is better)" name="anomaly_score"   value={form.anomaly_score}     onChange={handleSlider} />
           </div>
         </div>
 
-        <button type="submit" className="btn-primary w-full" disabled={loading}>
-          {loading ? 'Analyzing Goal...' : 'Run Goal Alignment Analysis'}
-        </button>
+        {/* Action buttons */}
+        <div className="flex flex-wrap gap-3 pt-2">
+          <button type="submit" className="btn-primary flex-1" disabled={loading || autoLoading}>
+            {loading ? 'Analyzing...' : 'Run Goal Alignment Analysis'}
+          </button>
+          <button
+            type="button"
+            onClick={() => autoFetchAll(targetStudentId)}
+            disabled={autoLoading || !targetStudentId}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-primary-500/10 border border-primary-500/30 text-primary-400 hover:bg-primary-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <RefreshCw className={`h-4 w-4 ${autoLoading ? 'animate-spin' : ''}`} />
+            Refresh Data
+          </button>
+          <button
+            type="button"
+            onClick={() => { setForm(defaultForm); setResult(null); setError(''); setPrefillMeta(null); }}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-gray-500/10 border border-gray-500/30 text-gray-400 hover:bg-gray-500/20 transition-colors"
+          >
+            <RotateCcw className="h-4 w-4" /> Reset
+          </button>
+        </div>
       </form>
 
       {error && (
@@ -337,7 +329,7 @@ const GoalAlignment = () => {
       {result && (
         <div className="space-y-6 animate-fade-in">
 
-          {/* Top metrics row */}
+          {/* Top metrics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="glass-card p-4 text-center border-t-4 border-t-primary-500">
               <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Alignment Score</p>
@@ -415,7 +407,6 @@ const GoalAlignment = () => {
                 ))}
               </ol>
             </div>
-
             <div className="glass-card p-5">
               <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2 uppercase tracking-wider">
                 <BookOpen className="h-4 w-4 text-blue-400" /> Suggested Resources
@@ -433,7 +424,7 @@ const GoalAlignment = () => {
             </div>
           </div>
 
-          {/* Skill gap radar chart */}
+          {/* Skill gap radar */}
           {radarData.length > 0 && (
             <div className="glass-card p-5">
               <h3 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider flex items-center gap-2">
@@ -445,7 +436,7 @@ const GoalAlignment = () => {
                     <RadarChart data={radarData}>
                       <PolarGrid stroke="#374151" />
                       <PolarAngleAxis dataKey="skill" tick={{ fill: '#9CA3AF', fontSize: 11 }} />
-                      <Radar name="Gap" dataKey="gap" stroke="#ef4444" fill="#ef4444" fillOpacity={0.3} />
+                      <Radar name="Gap"     dataKey="gap"     stroke="#ef4444" fill="#ef4444" fillOpacity={0.3} />
                       <Radar name="Mastery" dataKey="mastery" stroke="#10b981" fill="#10b981" fillOpacity={0.2} />
                       <Tooltip
                         contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', color: '#fff', borderRadius: '0.5rem' }}
@@ -478,7 +469,7 @@ const GoalAlignment = () => {
             </div>
           )}
 
-          {/* Domain scores (collapsible) */}
+          {/* Domain scores */}
           <div className="glass-card p-5">
             <button
               className="w-full flex items-center justify-between text-sm font-semibold text-white uppercase tracking-wider"
@@ -500,10 +491,7 @@ const GoalAlignment = () => {
                       <span className="text-white">{score}%</span>
                     </div>
                     <div className="w-full bg-dark-bg rounded-full h-2">
-                      <div
-                        className="h-2 rounded-full bg-primary-500"
-                        style={{ width: `${score}%` }}
-                      />
+                      <div className="h-2 rounded-full bg-primary-500" style={{ width: `${score}%` }} />
                     </div>
                   </div>
                 ))}

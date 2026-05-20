@@ -123,8 +123,39 @@ class MasteryPrefillOut(BaseModel):
     python_mastery:  float
     ml_mastery:      float
     dsa_mastery:     float
-    source_topics:   Dict[str, List[str]]   # skill → list of matched topic titles
-    has_data:        bool                   # False if no knowledge states exist yet
+    source_topics:   Dict[str, List[str]]
+    has_data:        bool
+
+
+class ContextPrefillOut(BaseModel):
+    """
+    Auto-computed learning context for a student derived from DB activity data.
+    Returned by GET /alignment/context-prefill/{student_id}.
+    Also includes goal_text from saved profile (if any) and all skill mastery.
+    """
+    # Skill mastery (from knowledge tracing)
+    html_mastery:    float
+    css_mastery:     float
+    js_mastery:      float
+    react_mastery:   float
+    python_mastery:  float
+    ml_mastery:      float
+    dsa_mastery:     float
+
+    # Learning context (computed from DB)
+    environment:       str
+    engagement_score:  float
+    consistency_score: float
+    integrity_score:   float
+    anomaly_score:     float
+
+    # Goal text from saved profile (empty string if none)
+    goal_text:         str
+
+    # Metadata
+    has_activity_data:  bool   # False if no activity logs exist yet
+    has_mastery_data:   bool   # False if no quiz history exists yet
+    has_saved_goal:     bool   # False if no previous goal profile exists
 
 
 class BatchAnalyzeRequest(BaseModel):
