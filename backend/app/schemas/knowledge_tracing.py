@@ -18,7 +18,7 @@ class StudentKnowledgeStateOut(BaseModel):
     last_updated: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class KnowledgePredictionOut(BaseModel):
     student_id: int

@@ -19,6 +19,7 @@ import KnowledgeTracing from '../pages/KnowledgeTracing';
 import Topics from '../pages/Topics';
 import QuizMgmt from '../pages/QuizMgmt';
 import StudentQuizzes from '../pages/StudentQuizzes';
+import GoalAlignment from '../pages/GoalAlignment';
 
 
 const RootRedirect = () => {
@@ -45,6 +46,7 @@ const AppRouter = () => {
           <Route path="/student/quizzes" element={<DashboardLayout><StudentQuizzes /></DashboardLayout>} />
           <Route path="/student/attendance" element={<DashboardLayout><Attendance /></DashboardLayout>} />
           <Route path="/student/knowledge" element={<DashboardLayout><KnowledgeTracing /></DashboardLayout>} />
+          <Route path="/student/goal-alignment" element={<DashboardLayout><GoalAlignment /></DashboardLayout>} />
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={['INSTRUCTOR']} />}>
@@ -59,6 +61,7 @@ const AppRouter = () => {
           <Route path="/instructor/predictions" element={<DashboardLayout><Predictions /></DashboardLayout>} />
           <Route path="/instructor/fatigue" element={<DashboardLayout><Fatigue /></DashboardLayout>} />
           <Route path="/instructor/knowledge" element={<DashboardLayout><KnowledgeTracing /></DashboardLayout>} />
+          <Route path="/instructor/goal-alignment" element={<DashboardLayout><GoalAlignment /></DashboardLayout>} />
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
@@ -73,6 +76,7 @@ const AppRouter = () => {
           <Route path="/admin/predictions" element={<DashboardLayout><Predictions /></DashboardLayout>} />
           <Route path="/admin/fatigue" element={<DashboardLayout><Fatigue /></DashboardLayout>} />
           <Route path="/admin/knowledge" element={<DashboardLayout><KnowledgeTracing /></DashboardLayout>} />
+          <Route path="/admin/goal-alignment" element={<DashboardLayout><GoalAlignment /></DashboardLayout>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

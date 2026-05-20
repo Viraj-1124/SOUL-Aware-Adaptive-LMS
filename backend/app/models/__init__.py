@@ -5,6 +5,7 @@ from .activity import StudentActivityLog
 from .attendance import Attendance
 from .assignment import Assignment, AssignmentSubmission
 from .knowledge_tracing import StudentQuestionInteraction, StudentKnowledgeState, KnowledgeStateHistory
+from .model4_goal_profile import StudentGoalProfile
 
 # This exposes all models so that `from app.models import User` still works elsewhere.
 __all__ = [
@@ -14,5 +15,6 @@ __all__ = [
     "StudentActivityLog",
     "Attendance",
     "Assignment", "AssignmentSubmission",
-    "StudentQuestionInteraction", "StudentKnowledgeState", "KnowledgeStateHistory"
+    "StudentQuestionInteraction", "StudentKnowledgeState", "KnowledgeStateHistory",
+    "StudentGoalProfile",
 ]

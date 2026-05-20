@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { 
   Home, BookOpen, FileText, CheckSquare, 
   Calendar, Activity, BrainCircuit,
-  Users, Settings, LogOut, Target
+  Users, Settings, LogOut, Target, Compass
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -22,6 +22,7 @@ const Sidebar = () => {
         { name: 'Quizzes', path: `${baseUrl}/quizzes`, icon: CheckSquare },
         { name: 'Attendance', path: `${baseUrl}/attendance`, icon: Calendar },
         { name: 'Knowledge Tracing', path: `${baseUrl}/knowledge`, icon: Target },
+        { name: 'Goal Alignment', path: `${baseUrl}/goal-alignment`, icon: Compass },
       ];
     } else if (role === 'INSTRUCTOR') {
       return [
@@ -34,6 +35,7 @@ const Sidebar = () => {
         { name: 'Predictions', path: `${baseUrl}/predictions`, icon: Activity },
         { name: 'Fatigue Monitor', path: `${baseUrl}/fatigue`, icon: BrainCircuit },
         { name: 'Knowledge Tracing', path: `${baseUrl}/knowledge`, icon: Target },
+        { name: 'Goal Alignment', path: `${baseUrl}/goal-alignment`, icon: Compass },
       ];
     } else if (role === 'ADMIN') {
       return [
@@ -45,6 +47,7 @@ const Sidebar = () => {
         { name: 'Predictions', path: `${baseUrl}/predictions`, icon: Activity },
         { name: 'System Monitor', path: `${baseUrl}/system`, icon: Settings },
         { name: 'Knowledge Tracing', path: `${baseUrl}/knowledge`, icon: Target },
+        { name: 'Goal Alignment', path: `${baseUrl}/goal-alignment`, icon: Compass },
       ];
     }
     return [];
