@@ -112,6 +112,12 @@ def run_alignment_pipeline(
         scaffold_level         = scaffold_level,
         integrity_flag         = integrity_flag,
         collaboration_score    = collaboration_score,
+        # Extended context for ML bundle feature vector
+        engagement_score       = engagement_score,
+        consistency_score      = consistency_score,
+        integrity_score        = integrity_score,
+        context_adjustment_score = context_adjustment_score,
+        skill_gap_vector       = skill_gap_vector,
     )
 
     # ── Step 7: Persist to DB ─────────────────────────────────────────────────

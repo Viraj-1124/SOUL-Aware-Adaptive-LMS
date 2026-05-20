@@ -90,8 +90,7 @@ def process_student_skills(row: dict, domain: str) -> dict:
     weakest_topics  = get_weakest_topics(gap_vector)
 
     return {
-        "topic_mastery_vector": mastery_vector,
-        "skill_gap_vector":     gap_vector,
-        "skill_gap":            gap_scalar,
-        "weakest_topics":       weakest_topics,
+        "skill_gap_vector": gap_vector,
+        "skill_gap":        gap_scalar,
+        "weakest_topics":   weakest_topics,
     }
