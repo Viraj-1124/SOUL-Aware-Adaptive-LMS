@@ -18,5 +18,6 @@ class StudentPrediction(Base):
     attendance_trend = Column(Float)
 
     risk_level = Column(Integer)
+    burnout_probability = Column(Float, nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)

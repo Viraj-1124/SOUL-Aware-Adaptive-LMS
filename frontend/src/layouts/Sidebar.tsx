@@ -4,7 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { 
   Home, BookOpen, FileText, CheckSquare, 
   Calendar, Activity, BrainCircuit,
-  Users, Settings, LogOut, Target, Compass
+  Users, Settings, LogOut, Target, Compass,
+  Bell, Lightbulb, BookMarked, Scale, TrendingUp
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -23,6 +24,11 @@ const Sidebar = () => {
         { name: 'Attendance', path: `${baseUrl}/attendance`, icon: Calendar },
         { name: 'Knowledge Tracing', path: `${baseUrl}/knowledge`, icon: Target },
         { name: 'Goal Alignment', path: `${baseUrl}/goal-alignment`, icon: Compass },
+        { name: 'Alerts', path: `${baseUrl}/alerts`, icon: Bell },
+        { name: 'Remediation', path: `${baseUrl}/remediation`, icon: Lightbulb },
+        { name: 'Reflection', path: `${baseUrl}/reflection`, icon: BookMarked },
+        { name: 'Ethics', path: `${baseUrl}/ethics`, icon: Scale },
+        { name: 'Engagement', path: `${baseUrl}/engagement`, icon: TrendingUp },
       ];
     } else if (role === 'INSTRUCTOR') {
       return [
@@ -36,6 +42,11 @@ const Sidebar = () => {
         { name: 'Fatigue Monitor', path: `${baseUrl}/fatigue`, icon: BrainCircuit },
         { name: 'Knowledge Tracing', path: `${baseUrl}/knowledge`, icon: Target },
         { name: 'Goal Alignment', path: `${baseUrl}/goal-alignment`, icon: Compass },
+        { name: 'Alerts', path: `${baseUrl}/alerts`, icon: Bell },
+        { name: 'Remediation', path: `${baseUrl}/remediation`, icon: Lightbulb },
+        { name: 'Reflection', path: `${baseUrl}/reflection`, icon: BookMarked },
+        { name: 'Ethics', path: `${baseUrl}/ethics`, icon: Scale },
+        { name: 'Engagement', path: `${baseUrl}/engagement`, icon: TrendingUp },
       ];
     } else if (role === 'ADMIN') {
       return [
@@ -48,6 +59,11 @@ const Sidebar = () => {
         { name: 'System Monitor', path: `${baseUrl}/system`, icon: Settings },
         { name: 'Knowledge Tracing', path: `${baseUrl}/knowledge`, icon: Target },
         { name: 'Goal Alignment', path: `${baseUrl}/goal-alignment`, icon: Compass },
+        { name: 'Alerts', path: `${baseUrl}/alerts`, icon: Bell },
+        { name: 'Remediation', path: `${baseUrl}/remediation`, icon: Lightbulb },
+        { name: 'Reflection', path: `${baseUrl}/reflection`, icon: BookMarked },
+        { name: 'Ethics', path: `${baseUrl}/ethics`, icon: Scale },
+        { name: 'Engagement', path: `${baseUrl}/engagement`, icon: TrendingUp },
       ];
     }
     return [];

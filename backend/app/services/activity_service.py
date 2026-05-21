@@ -17,7 +17,8 @@ ALLOWED_ACTIVITIES = {
 
 def log_activity(db: Session, student_id: int, data):
 
-    if data.activity_type not in ALLOWED_ACTIVITIES:
+    is_valid = data.activity_type in ALLOWED_ACTIVITIES or data.activity_type.startswith("page_view")
+    if not is_valid:
         raise ValueError("Invalid activity type")
 
     log = StudentActivityLog(

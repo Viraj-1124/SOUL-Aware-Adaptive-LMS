@@ -21,6 +21,13 @@ import QuizMgmt from '../pages/QuizMgmt';
 import StudentQuizzes from '../pages/StudentQuizzes';
 import GoalAlignment from '../pages/GoalAlignment';
 
+// New Feature Pages
+import Alerts from '../pages/Alerts';
+import RemediationDashboard from '../pages/RemediationDashboard';
+import ReflectionJournal from '../pages/ReflectionJournal';
+import EthicsTracking from '../pages/EthicsTracking';
+import RealTimeEngagement from '../pages/RealTimeEngagement';
+
 
 const RootRedirect = () => {
   const { user, isAuthenticated } = useAuth();
@@ -47,6 +54,13 @@ const AppRouter = () => {
           <Route path="/student/attendance" element={<DashboardLayout><Attendance /></DashboardLayout>} />
           <Route path="/student/knowledge" element={<DashboardLayout><KnowledgeTracing /></DashboardLayout>} />
           <Route path="/student/goal-alignment" element={<DashboardLayout><GoalAlignment /></DashboardLayout>} />
+          
+          {/* New Feature Routes */}
+          <Route path="/student/alerts" element={<DashboardLayout><Alerts /></DashboardLayout>} />
+          <Route path="/student/remediation" element={<DashboardLayout><RemediationDashboard /></DashboardLayout>} />
+          <Route path="/student/reflection" element={<DashboardLayout><ReflectionJournal /></DashboardLayout>} />
+          <Route path="/student/ethics" element={<DashboardLayout><EthicsTracking /></DashboardLayout>} />
+          <Route path="/student/engagement" element={<DashboardLayout><RealTimeEngagement /></DashboardLayout>} />
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={['INSTRUCTOR']} />}>
@@ -62,6 +76,13 @@ const AppRouter = () => {
           <Route path="/instructor/fatigue" element={<DashboardLayout><Fatigue /></DashboardLayout>} />
           <Route path="/instructor/knowledge" element={<DashboardLayout><KnowledgeTracing /></DashboardLayout>} />
           <Route path="/instructor/goal-alignment" element={<DashboardLayout><GoalAlignment /></DashboardLayout>} />
+          
+          {/* New Feature Routes */}
+          <Route path="/instructor/alerts" element={<DashboardLayout><Alerts /></DashboardLayout>} />
+          <Route path="/instructor/remediation" element={<DashboardLayout><RemediationDashboard /></DashboardLayout>} />
+          <Route path="/instructor/reflection" element={<DashboardLayout><ReflectionJournal /></DashboardLayout>} />
+          <Route path="/instructor/ethics" element={<DashboardLayout><EthicsTracking /></DashboardLayout>} />
+          <Route path="/instructor/engagement" element={<DashboardLayout><RealTimeEngagement /></DashboardLayout>} />
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
@@ -77,6 +98,13 @@ const AppRouter = () => {
           <Route path="/admin/fatigue" element={<DashboardLayout><Fatigue /></DashboardLayout>} />
           <Route path="/admin/knowledge" element={<DashboardLayout><KnowledgeTracing /></DashboardLayout>} />
           <Route path="/admin/goal-alignment" element={<DashboardLayout><GoalAlignment /></DashboardLayout>} />
+          
+          {/* New Feature Routes */}
+          <Route path="/admin/alerts" element={<DashboardLayout><Alerts /></DashboardLayout>} />
+          <Route path="/admin/remediation" element={<DashboardLayout><RemediationDashboard /></DashboardLayout>} />
+          <Route path="/admin/reflection" element={<DashboardLayout><ReflectionJournal /></DashboardLayout>} />
+          <Route path="/admin/ethics" element={<DashboardLayout><EthicsTracking /></DashboardLayout>} />
+          <Route path="/admin/engagement" element={<DashboardLayout><RealTimeEngagement /></DashboardLayout>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

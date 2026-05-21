@@ -8,5 +8,11 @@ bcrypt==3.2.2
 python-multipart
 textblob 
 textstat
+apscheduler==3.10.4
+openai==0.27.8
+numpy
+scikit-learn
+tensorflow
+nltk
 nltk
 scikit-learn

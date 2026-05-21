@@ -3,9 +3,14 @@ from .database import engine, SessionLocal, Base
 from . import models
 from .auth.securities import hash_password
 from .routers import attendance, users, courses, topics, quizzes, activity, assignments,learning_health,debug,fatigue,predictions,knowledge
-from .routers import model4_alignment
+from .routers import model4_alignment, alerts
+from .services.scheduler import init_scheduler, start_scheduler
+import os
+import logging
 
 from fastapi.middleware.cors import CORSMiddleware
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Soul LMS Backend")
 
@@ -31,6 +36,7 @@ app.include_router(fatigue.router)
 app.include_router(predictions.router)
 app.include_router(knowledge.router)
 app.include_router(model4_alignment.router)
+app.include_router(alerts.router)
 
 @app.get("/")
 def root():
@@ -79,3 +85,26 @@ def create_student():
         db.add(student)
         db.commit()
     db.close()
+
+
+@app.on_event("startup")
+def initialize_scheduler():
+    """Initialize and start background scheduler"""
+    try:
+        from .database import DATABASE_URL
+        init_scheduler(DATABASE_URL)
+        start_scheduler()
+        logger.info("Background scheduler initialized and started")
+    except Exception as e:
+        logger.error(f"Error initializing scheduler: {e}")
+
+
+@app.on_event("shutdown")
+def shutdown_scheduler():
+    """Shutdown the scheduler"""
+    try:
+        from .services.scheduler import stop_scheduler
+        stop_scheduler()
+        logger.info("Scheduler shut down")
+    except Exception as e:
+        logger.error(f"Error shutting down scheduler: {e}")

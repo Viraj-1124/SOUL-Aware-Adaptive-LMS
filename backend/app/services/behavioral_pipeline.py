@@ -16,6 +16,11 @@ def run_behavioral_pipeline(db, student_id, course_id):
 
     # 2️⃣ Run ML Prediction
     prediction = model.predict([features])[0]
+    try:
+        prob = model.predict_proba([features])[0]
+        burnout_prob = float(prob[2] if len(prob) > 2 else prob[-1])
+    except Exception:
+        burnout_prob = 0.85 if int(prediction) == 2 else (0.50 if int(prediction) == 1 else 0.15)
 
     prediction_record = StudentPrediction(
         student_id=student_id,
@@ -26,7 +31,8 @@ def run_behavioral_pipeline(db, student_id, course_id):
         engagement_trend=features[3],
         performance_trend=features[4],
         attendance_trend=features[5],
-        risk_level=int(prediction)
+        risk_level=int(prediction),
+        burnout_probability=burnout_prob
     )
 
     db.add(prediction_record)
